@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:hotel_wear_app/presentation/screens/wear/wear_screens.dart';
+import 'package:hotel_wear_app/presentation/screens/wear/wear_main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,7 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
         primarySwatch: Colors.blue,
       ),
-      home: const WearDashboardScreen(),
+      home: const WearMainScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

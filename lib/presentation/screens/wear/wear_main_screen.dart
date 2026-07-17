@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'wear_dashboard_screen.dart';
 import 'wear_alerts_screen.dart';
@@ -27,45 +28,67 @@ class _WearMainScreenState extends ConsumerState<WearMainScreen> {
     super.dispose();
   }
 
+  void _goToPreviousPage() {
+    if (_currentPage > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+      return;
+    }
+
+    SystemNavigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          PageView(
-            controller: _pageController,
-            onPageChanged: (index) => setState(() => _currentPage = index),
-            children: const [
-              WearDashboardScreen(),
-              WearAlertsScreen(),
-              WearHistoryScreen(),
-            ],
-          ),
-          // Indicador de página circular en la parte inferior
-          Positioned(
-            bottom: 18,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (i) {
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: _currentPage == i ? 8 : 5,
-                  height: _currentPage == i ? 8 : 5,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _currentPage == i
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.35),
-                  ),
-                );
-              }),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+
+        _goToPreviousPage();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            PageView(
+              controller: _pageController,
+              onPageChanged: (index) => setState(() => _currentPage = index),
+              children: const [
+                WearDashboardScreen(),
+                WearAlertsScreen(),
+                WearHistoryScreen(),
+              ],
             ),
-          ),
-        ],
+            // Indicador de página circular en la parte inferior
+            Positioned(
+              bottom: 18,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(3, (i) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: _currentPage == i ? 8 : 5,
+                    height: _currentPage == i ? 8 : 5,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _currentPage == i
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.35),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

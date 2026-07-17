@@ -13,79 +13,122 @@ class WearHistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksAsync = ref.watch(wearTasksProvider);
 
+    const circularPadding = EdgeInsets.fromLTRB(28, 44, 28, 44);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Historial'),
-        elevation: 0,
-      ),
-      body: tasksAsync.when(
-        data: (tasks) {
-          // Filtrar tareas completadas y canceladas
-          final history = tasks
-              .where((t) =>
-                  t.status == WearTaskStatus.completed ||
-                  t.status == WearTaskStatus.cancelled)
-              .toList();
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        minimum: circularPadding,
+        child: tasksAsync.when(
+          data: (tasks) {
+            final history = tasks
+                .where((t) =>
+                    t.status == WearTaskStatus.completed ||
+                    t.status == WearTaskStatus.cancelled)
+                .toList()
+              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-          if (history.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.history,
-                    size: 48,
-                    color: Colors.grey[400],
+            if (history.isEmpty) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.history, size: 36, color: Colors.white24),
+                    SizedBox(height: 10),
+                    Text(
+                      'Sin historial',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Las tareas completadas\naparecerán aquí',
+                      style: TextStyle(color: Colors.white38, fontSize: 10),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            // Agrupar por fecha
+            final grouped = <String, List<WearTask>>{};
+            for (final task in history) {
+              final dateKey =
+                  '${task.createdAt.day}/${task.createdAt.month}/${task.createdAt.year}';
+              grouped.putIfAbsent(dateKey, () => []).add(task);
+            }
+
+            return CustomScrollView(
+              slivers: [
+                // Header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.history, size: 13, color: Colors.white70),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Historial',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${history.length} tareas',
+                          style: const TextStyle(
+                              color: Colors.white38, fontSize: 10),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Sin historial',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Las tareas completadas aparecerán aquí',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-                  ),
-                ],
-              ),
-            );
-          }
+                ),
 
-          // Ordenar por fecha más reciente primero
-          history.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-          // Agrupar por fecha
-          final grouped = <String, List<WearTask>>{};
-          for (final task in history) {
-            final dateKey = '${task.createdAt.day}/${task.createdAt.month}/${task.createdAt.year}';
-            grouped.putIfAbsent(dateKey, () => []).add(task);
-          }
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
                 for (final entry in grouped.entries) ...[
-                  Text(
-                    entry.key,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 5, top: 4),
+                      child: Text(
+                        entry.key,
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Column(
-                    children: entry.value
-                        .map((task) => WearHistoryItem(task: task))
-                        .toList(),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (_, i) => WearHistoryItem(task: entry.value[i]),
+                      childCount: entry.value.length,
+                    ),
                   ),
-                  const SizedBox(height: 24),
                 ],
+
+                const SliverToBoxAdapter(child: SizedBox(height: 30)),
               ],
+            );
+          },
+          loading: () => const Center(
+            child: SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, st) => Center(child: Text('Error: $err')),
+          ),
+          error: (e, _) => Center(
+            child: Text('Error',
+                style: TextStyle(color: Colors.red[400], fontSize: 11)),
+          ),
+        ),
       ),
     );
   }

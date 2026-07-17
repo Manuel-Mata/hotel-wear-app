@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hotel_wear_app/domain/entities/wear/wear_task.dart';
 
+/// Tarjeta compacta para Wear OS Large Round.
+/// Diseñada para pantallas circulares de ~450x450dp.
 class WearTaskCard extends StatelessWidget {
   final WearTask task;
   final VoidCallback onTap;
@@ -13,107 +15,89 @@ class WearTaskCard extends StatelessWidget {
     this.onAccept,
   }) : super(key: key);
 
-  Color _getStatusColor() {
-    return switch (task.status) {
-      WearTaskStatus.pending => Colors.orange,
-      WearTaskStatus.inProgress => Colors.blue,
-      WearTaskStatus.completed => Colors.green,
-      WearTaskStatus.cancelled => Colors.grey,
-    };
-  }
+  Color get _statusColor => switch (task.status) {
+        WearTaskStatus.pending => const Color(0xFFFF9800),
+        WearTaskStatus.inProgress => const Color(0xFF2196F3),
+        WearTaskStatus.completed => const Color(0xFF4CAF50),
+        WearTaskStatus.cancelled => const Color(0xFF757575),
+      };
 
-  Icon _getTaskIcon() {
-    return switch (task.taskType) {
-      WearTaskType.cleaning => const Icon(Icons.cleaning_services),
-      WearTaskType.maintenance => const Icon(Icons.build),
-      WearTaskType.inspection => const Icon(Icons.assignment_ind),
-      WearTaskType.delivery => const Icon(Icons.local_shipping),
-      WearTaskType.guest_request => const Icon(Icons.person),
-    };
-  }
+  IconData get _taskIcon => switch (task.taskType) {
+        WearTaskType.cleaning => Icons.cleaning_services,
+        WearTaskType.maintenance => Icons.build,
+        WearTaskType.inspection => Icons.assignment_ind,
+        WearTaskType.delivery => Icons.local_shipping,
+        WearTaskType.guest_request => Icons.room_service,
+      };
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
-        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        margin: const EdgeInsets.only(bottom: 6),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: _getStatusColor(), width: 2),
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(10),
+          border: Border(
+            left: BorderSide(color: _statusColor, width: 3),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    _getTaskIcon(),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Habitación ${task.roomNumber}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            task.taskType.label,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor().withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+                Icon(_taskIcon, size: 14, color: _statusColor),
+                const SizedBox(width: 6),
+                Expanded(
                   child: Text(
-                    task.status.label,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: _getStatusColor(),
+                    'Hab. ${task.roomNumber} · ${task.taskType.label}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _statusColor,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               task.description,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: Colors.grey[300]),
+              style: const TextStyle(fontSize: 10, color: Colors.white54),
             ),
             if (task.status == WearTaskStatus.pending && onAccept != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               SizedBox(
                 width: double.infinity,
+                height: 28,
                 child: ElevatedButton(
                   onPressed: onAccept,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    backgroundColor: const Color(0xFF4CAF50),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    elevation: 0,
                   ),
                   child: const Text(
                     'Aceptar',
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

@@ -11,89 +11,154 @@ class WearAlertsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final alertsAsync = ref.watch(wearAlertsProvider);
-    final unacknowledgedAsync = ref.watch(wearUnacknowledgedAlertsProvider);
+
+    const circularPadding = EdgeInsets.fromLTRB(28, 44, 28, 44);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alertas'),
-        elevation: 0,
-      ),
-      body: alertsAsync.when(
-        data: (alerts) {
-          if (alerts.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 48,
-                    color: Colors.green[400],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Sin alertas',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Todo está bajo control',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-                  ),
-                ],
-              ),
-            );
-          }
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        minimum: circularPadding,
+        child: alertsAsync.when(
+          data: (alerts) {
+            if (alerts.isEmpty) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.check_circle, size: 36, color: Colors.green),
+                    SizedBox(height: 10),
+                    Text(
+                      'Sin alertas',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Todo bajo control',
+                      style: TextStyle(color: Colors.white38, fontSize: 10),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          // Separar por reconocidas y no reconocidas
-          final unacknowledged =
-              alerts.where((a) => !a.isAcknowledged).toList();
-          final acknowledged = alerts.where((a) => a.isAcknowledged).toList();
+            final unacknowledged = alerts.where((a) => !a.isAcknowledged).toList();
+            final acknowledged = alerts.where((a) => a.isAcknowledged).toList();
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+            return CustomScrollView(
+              slivers: [
+                // Header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.notifications_outlined,
+                            size: 13, color: Colors.white70),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Alertas',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (unacknowledged.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${unacknowledged.length}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+
                 if (unacknowledged.isNotEmpty) ...[
-                  Text(
-                    'Por Reconocer (${unacknowledged.length})',
-                    style: Theme.of(context).textTheme.titleLarge,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 5),
+                      child: Text(
+                        'Por reconocer',
+                        style: TextStyle(
+                          color: Colors.orange[300],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Column(
-                    children: unacknowledged
-                        .map((alert) => WearAlertCard(
-                              alert: alert,
-                              onAcknowledge: () {
-                                ref.read(acknowledgeWearAlertProvider(alert.id));
-                              },
-                            ))
-                        .toList(),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (_, i) => WearAlertCard(
+                        alert: unacknowledged[i],
+                        onAcknowledge: () {
+                          ref.read(
+                              acknowledgeWearAlertProvider(unacknowledged[i].id));
+                        },
+                      ),
+                      childCount: unacknowledged.length,
+                    ),
                   ),
-                  const SizedBox(height: 24),
                 ],
+
                 if (acknowledged.isNotEmpty) ...[
-                  Text(
-                    'Reconocidas (${acknowledged.length})',
-                    style: Theme.of(context).textTheme.titleLarge,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 5),
+                      child: Text(
+                        'Reconocidas',
+                        style: TextStyle(
+                          color: Colors.green[300],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Column(
-                    children: acknowledged
-                        .map((alert) => WearAlertCard(
-                              alert: alert,
-                              onAcknowledge: () {},
-                            ))
-                        .toList(),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (_, i) => WearAlertCard(
+                        alert: acknowledged[i],
+                        onAcknowledge: () {},
+                      ),
+                      childCount: acknowledged.length,
+                    ),
                   ),
                 ],
+
+                const SliverToBoxAdapter(child: SizedBox(height: 30)),
               ],
+            );
+          },
+          loading: () => const Center(
+            child: SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, st) => Center(child: Text('Error: $err')),
+          ),
+          error: (e, _) => Center(
+            child: Text('Error',
+                style: TextStyle(color: Colors.red[400], fontSize: 11)),
+          ),
+        ),
       ),
     );
   }

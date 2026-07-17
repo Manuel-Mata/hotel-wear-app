@@ -30,27 +30,42 @@ class _WearMainScreenState extends ConsumerState<WearMainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() => _currentPage = index);
-        },
-        children: const [
-          WearDashboardScreen(),
-          WearAlertsScreen(),
-          WearHistoryScreen(),
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          PageView(
+            controller: _pageController,
+            onPageChanged: (index) => setState(() => _currentPage = index),
+            children: const [
+              WearDashboardScreen(),
+              WearAlertsScreen(),
+              WearHistoryScreen(),
+            ],
+          ),
+          // Indicador de página circular en la parte inferior
+          Positioned(
+            bottom: 18,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(3, (i) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: _currentPage == i ? 8 : 5,
+                  height: _currentPage == i ? 8 : 5,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _currentPage == i
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.35),
+                  ),
+                );
+              }),
+            ),
+          ),
         ],
-      ),
-      // Indicador simple de página
-      floatingActionButton: FloatingActionButton(
-        mini: true,
-        onPressed: () {},
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: Text(
-          '${_currentPage + 1}/3',
-          style: const TextStyle(fontSize: 10, color: Colors.white70),
-        ),
       ),
     );
   }

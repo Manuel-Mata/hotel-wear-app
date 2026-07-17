@@ -4,56 +4,54 @@ import 'package:hotel_wear_app/domain/entities/wear/wear_task.dart';
 import 'package:hotel_wear_app/presentation/providers/wear/wear_providers.dart';
 import 'package:hotel_wear_app/presentation/screens/wear/wear_confirmation_screen.dart';
 
-/// Pantalla de detalle de una tarea del wearable.
-/// Permite ver toda la información de la tarea y navegar
-/// a la pantalla de confirmación para completarla.
+/// Pantalla de detalle de una tarea — optimizada para Wear OS Large Round.
 class WearTaskDetailScreen extends ConsumerWidget {
   static const String routeName = '/wear-task-detail';
 
   final String taskId;
 
-  const WearTaskDetailScreen({
-    Key? key,
-    required this.taskId,
-  }) : super(key: key);
+  const WearTaskDetailScreen({Key? key, required this.taskId}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksAsync = ref.watch(wearTasksProvider);
 
+    const circularPadding = EdgeInsets.fromLTRB(26, 42, 26, 36);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detalle de Tarea'),
-        elevation: 0,
-      ),
-      body: tasksAsync.when(
-        data: (tasks) {
-          final matching = tasks.where((t) => t.id == taskId).toList();
-
-          if (matching.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check_circle_outline, color: Colors.green, size: 64),
-                  SizedBox(height: 16),
-                  Text(
-                    'Tarea completada',
-                    style: TextStyle(color: Colors.white70, fontSize: 16),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final task = matching.first;
-          return _TaskDetailBody(task: task);
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, st) => Center(
-          child: Text(
-            'Error al cargar la tarea',
-            style: TextStyle(color: Colors.red[300]),
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        minimum: circularPadding,
+        child: tasksAsync.when(
+          data: (tasks) {
+            final matching = tasks.where((t) => t.id == taskId).toList();
+            if (matching.isEmpty) {
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green, size: 40),
+                    SizedBox(height: 10),
+                    Text(
+                      'Completada',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return _DetailBody(task: matching.first);
+          },
+          loading: () => const Center(
+            child: SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          error: (_, __) => Center(
+            child: Text('Error',
+                style: TextStyle(color: Colors.red[400], fontSize: 11)),
           ),
         ),
       ),
@@ -61,254 +59,201 @@ class WearTaskDetailScreen extends ConsumerWidget {
   }
 }
 
-class _TaskDetailBody extends StatelessWidget {
+class _DetailBody extends StatelessWidget {
   final WearTask task;
+  const _DetailBody({required this.task});
 
-  const _TaskDetailBody({required this.task});
-
-  Color _priorityColor(int priority) {
-    if (priority >= 4) return Colors.red;
-    if (priority == 3) return Colors.orange;
-    return Colors.green;
+  Color _priorityColor(int p) {
+    if (p >= 4) return const Color(0xFFF44336);
+    if (p == 3) return const Color(0xFFFF9800);
+    return const Color(0xFF4CAF50);
   }
 
-  IconData _taskIcon(WearTaskType type) {
-    switch (type) {
-      case WearTaskType.cleaning:
-        return Icons.cleaning_services;
-      case WearTaskType.maintenance:
-        return Icons.build;
-      case WearTaskType.inspection:
-        return Icons.search;
-      case WearTaskType.delivery:
-        return Icons.local_shipping;
-      case WearTaskType.guest_request:
-        return Icons.room_service;
-    }
-  }
+  IconData _taskIcon(WearTaskType type) => switch (type) {
+        WearTaskType.cleaning => Icons.cleaning_services,
+        WearTaskType.maintenance => Icons.build,
+        WearTaskType.inspection => Icons.search,
+        WearTaskType.delivery => Icons.local_shipping,
+        WearTaskType.guest_request => Icons.room_service,
+      };
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Encabezado
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[900],
-                    borderRadius: BorderRadius.circular(12),
+    return CustomScrollView(
+      slivers: [
+        // Header: icono + habitación + prioridad
+        SliverToBoxAdapter(
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(Icons.arrow_back_ios,
+                        size: 14, color: Colors.white54),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          _taskIcon(task.taskType),
-                          color: Colors.blue,
-                          size: 28,
-                        ),
+                  const SizedBox(width: 4),
+                  Icon(_taskIcon(task.taskType),
+                      size: 14, color: Colors.white70),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      'Habitación ${task.roomNumber}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Habitación ${task.roomNumber}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              task.taskType.label,
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Indicador de prioridad
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _priorityColor(task.priority).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: _priorityColor(task.priority),
-                          ),
-                        ),
-                        child: Text(
-                          'P${task.priority}',
-                          style: TextStyle(
-                            color: _priorityColor(task.priority),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _priorityColor(task.priority).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: _priorityColor(task.priority), width: 1),
+                    ),
+                    child: Text(
+                      'P${task.priority}',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: _priorityColor(task.priority),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                task.taskType.label,
+                style:
+                    const TextStyle(fontSize: 10, color: Colors.white38),
+              ),
+            ],
+          ),
+        ),
 
-                // Descripción
-                Text(
-                  'Descripción',
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 12,
-                    letterSpacing: 1,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[900],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    task.description,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.left,
-                  ),
-                ),
-                const SizedBox(height: 20),
+        const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
-                // Tiempo transcurrido
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[900],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(Icons.timer_outlined, color: Colors.grey[400], size: 20),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${task.elapsedTime.inMinutes} min',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              'Transcurrido',
-                              style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[900],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(Icons.flag_outlined, color: Colors.grey[400], size: 20),
-                            const SizedBox(height: 4),
-                            Text(
-                              task.status.label,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Text(
-                              'Estado',
-                              style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-
-                // Botón Completar (navega a confirmation)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: const Icon(Icons.check_circle_outline, size: 20),
-                    label: const Text(
-                      'Completar tarea',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => WearConfirmationScreen(task: task),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Botón Volver
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      'Volver',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                  ),
-                ),
-              ],
+        // Descripción
+        SliverToBoxAdapter(
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              task.description,
+              style: const TextStyle(
+                  color: Colors.white70, fontSize: 11, height: 1.4),
+              textAlign: TextAlign.center,
             ),
           ),
-        );
-      },
+        ),
+
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+
+        // Tiempo + Estado
+        SliverToBoxAdapter(
+          child: Row(
+            children: [
+              Expanded(
+                child: _InfoChip(
+                  icon: Icons.timer_outlined,
+                  value: '${task.elapsedTime.inMinutes}m',
+                  label: 'Tiempo',
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _InfoChip(
+                  icon: Icons.flag_outlined,
+                  value: task.status.label,
+                  label: 'Estado',
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+        // Botón Completar
+        SliverToBoxAdapter(
+          child: SizedBox(
+            width: double.infinity,
+            height: 34,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.check_circle_outline, size: 15),
+              label: const Text(
+                'Completar',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WearConfirmationScreen(task: task),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+
+        const SliverToBoxAdapter(child: SizedBox(height: 30)),
+      ],
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  const _InfoChip(
+      {required this.icon, required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 13, color: Colors.white38),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(label,
+              style:
+                  const TextStyle(color: Colors.white24, fontSize: 9)),
+        ],
+      ),
     );
   }
 }

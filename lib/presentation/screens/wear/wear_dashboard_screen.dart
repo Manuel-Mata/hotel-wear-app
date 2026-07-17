@@ -8,7 +8,6 @@ import 'package:hotel_wear_app/presentation/screens/wear/wear_task_detail_screen
 class WearDashboardScreen extends ConsumerWidget {
   static const String routeName = '/wear-dashboard';
   static const String routePath = '/wear-dashboard';
-  
 
   const WearDashboardScreen({Key? key}) : super(key: key);
 
@@ -16,128 +15,198 @@ class WearDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingTasksAsync = ref.watch(wearPendingTasksProvider);
     final inProgressTasksAsync = ref.watch(wearInProgressTasksProvider);
-    final connectionStatusAsync = ref.watch(wearCommunicationServiceProvider).connectionStatus;
+    final connectionStatus =
+        ref.watch(wearCommunicationServiceProvider).connectionStatus;
+
+    // Padding circular para Wear OS Large Round (450x450 dp)
+    // Los bordes curvos empiezan aprox a los 38px en cada lado
+    const circularPadding = EdgeInsets.fromLTRB(28, 44, 28, 44);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Panel de Control'),
-        elevation: 0,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Center(
-              child: ValueListenableBuilder(
-                valueListenable: connectionStatusAsync,
-                builder: (context, status, _) {
-                  return Tooltip(
-                    message: status.toString(),
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: status.name == 'connected' ? Colors.green : Colors.red,
-                        shape: BoxShape.circle,
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        minimum: circularPadding,
+        child: CustomScrollView(
+          slivers: [
+            // Header compacto con título y estado de conexión
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Panel',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                  );
-                },
+                    ValueListenableBuilder(
+                      valueListenable: connectionStatus,
+                      builder: (_, status, __) => Row(
+                        children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: status.name == 'connected'
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            status.name == 'connected' ? 'Online' : 'Offline',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: status.name == 'connected'
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ),
+
+            // Sección: En Progreso
+            SliverToBoxAdapter(
+              child: _SectionLabel(label: 'En progreso', icon: Icons.play_circle_outline),
+            ),
+            inProgressTasksAsync.when(
+              data: (tasks) => tasks.isEmpty
+                  ? const SliverToBoxAdapter(child: _EmptySlot(text: 'Sin tareas activas'))
+                  : SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, i) => WearTaskCard(
+                          task: tasks[i],
+                          onTap: () => Navigator.push(
+                            ctx,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  WearTaskDetailScreen(taskId: tasks[i].id),
+                            ),
+                          ),
+                        ),
+                        childCount: tasks.length,
+                      ),
+                    ),
+              loading: () => const SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+              ),
+              error: (e, _) => SliverToBoxAdapter(
+                child: Text('Error', style: TextStyle(color: Colors.red[400], fontSize: 11)),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+            // Sección: Pendientes
+            SliverToBoxAdapter(
+              child: _SectionLabel(label: 'Pendientes', icon: Icons.pending_outlined),
+            ),
+            pendingTasksAsync.when(
+              data: (tasks) => tasks.isEmpty
+                  ? const SliverToBoxAdapter(child: _EmptySlot(text: 'Sin tareas pendientes'))
+                  : SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, i) => WearTaskCard(
+                          task: tasks[i],
+                          onTap: () => Navigator.push(
+                            ctx,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  WearTaskDetailScreen(taskId: tasks[i].id),
+                            ),
+                          ),
+                          onAccept: () {
+                            ref.read(acceptWearTaskProvider(tasks[i].id));
+                          },
+                        ),
+                        childCount: tasks.length,
+                      ),
+                    ),
+              loading: () => const SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+              ),
+              error: (e, _) => SliverToBoxAdapter(
+                child: Text('Error', style: TextStyle(color: Colors.red[400], fontSize: 11)),
+              ),
+            ),
+
+            // Espacio final para el indicador de página
+            const SliverToBoxAdapter(child: SizedBox(height: 30)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  const _SectionLabel({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 12, color: Colors.white54),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Tareas en progreso
-            Text(
-              'En Progreso',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            inProgressTasksAsync.when(
-              data: (tasks) {
-                if (tasks.isEmpty) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Sin tareas en progreso',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  );
-                }
-                return Column(
-                  children: tasks
-                      .map((task) => WearTaskCard(
-                            task: task,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => WearTaskDetailScreen(taskId: task.id),
-                                ),
-                              );
-                            },
-                          ))
-                      .toList(),
-                );
-              },
-              loading: () => const CircularProgressIndicator(),
-              error: (err, st) => Text('Error: $err'),
-            ),
-            const SizedBox(height: 24),
+    );
+  }
+}
 
-            // Tareas pendientes
-            Text(
-              'Pendientes',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            pendingTasksAsync.when(
-              data: (tasks) {
-                if (tasks.isEmpty) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Sin tareas pendientes',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  );
-                }
-                return Column(
-                  children: tasks
-                      .map((task) => WearTaskCard(
-                            task: task,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => WearTaskDetailScreen(taskId: task.id),
-                                ),
-                              );
-                            },
-                            onAccept: () {
-                              ref.read(acceptWearTaskProvider(task.id));
-                            },
-                          ))
-                      .toList(),
-                );
-              },
-              loading: () => const CircularProgressIndicator(),
-              error: (err, st) => Text('Error: $err'),
-            ),
-          ],
-        ),
+class _EmptySlot extends StatelessWidget {
+  final String text;
+  const _EmptySlot({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white24, fontSize: 11),
       ),
     );
   }

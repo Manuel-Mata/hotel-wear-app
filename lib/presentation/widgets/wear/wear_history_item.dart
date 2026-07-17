@@ -1,102 +1,87 @@
 import 'package:flutter/material.dart';
 import 'package:hotel_wear_app/domain/entities/wear/wear_task.dart';
 
+/// Item de historial compacto para Wear OS Large Round.
 class WearHistoryItem extends StatelessWidget {
   final WearTask task;
 
-  const WearHistoryItem({
-    Key? key,
-    required this.task,
-  }) : super(key: key);
+  const WearHistoryItem({Key? key, required this.task}) : super(key: key);
 
-  Color _getStatusColor() {
-    return switch (task.status) {
-      WearTaskStatus.completed => Colors.green,
-      WearTaskStatus.cancelled => Colors.red,
-      _ => Colors.grey,
-    };
-  }
+  Color get _statusColor => switch (task.status) {
+        WearTaskStatus.completed => const Color(0xFF4CAF50),
+        WearTaskStatus.cancelled => const Color(0xFFF44336),
+        _ => const Color(0xFF757575),
+      };
 
-  Duration get _duration {
-    if (task.completedAt != null) {
-      return task.completedAt!.difference(task.createdAt);
-    }
-    return Duration.zero;
+  String get _durationLabel {
+    if (task.completedAt == null) return '';
+    final mins = task.completedAt!.difference(task.createdAt).inMinutes;
+    return '${mins}m';
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      margin: const EdgeInsets.only(bottom: 5),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: const Color(0xFF141414),
         borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(color: _statusColor, width: 2),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Habitación ${task.roomNumber}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      task.taskType.label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                  ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hab. ${task.roomNumber} · ${task.taskType.label}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
+                const SizedBox(height: 2),
+                Text(
+                  task.description,
+                  style: const TextStyle(fontSize: 9, color: Colors.white38),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
-                  color: _getStatusColor().withOpacity(0.2),
+                  color: _statusColor.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  task.status.label,
+                  task.status == WearTaskStatus.completed ? 'Hecho' : 'Cancel.',
                   style: TextStyle(
-                    fontSize: 10,
-                    color: _getStatusColor(),
+                    fontSize: 9,
+                    color: _statusColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            task.description,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 12, color: Colors.grey[300]),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Creada: ${task.createdAt.hour}:${task.createdAt.minute.toString().padLeft(2, '0')}',
-                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-              ),
-              if (task.completedAt != null)
+              if (_durationLabel.isNotEmpty) ...[
+                const SizedBox(height: 2),
                 Text(
-                  'Duración: ${_duration.inMinutes} min',
-                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                  _durationLabel,
+                  style: const TextStyle(fontSize: 9, color: Colors.white24),
                 ),
+              ],
             ],
           ),
         ],

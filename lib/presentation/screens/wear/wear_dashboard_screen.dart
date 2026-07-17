@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hotel_wear_app/presentation/providers/wear/wear_providers.dart';
 import 'package:hotel_wear_app/presentation/widgets/wear/wear_task_card.dart';
-import 'package:hotel_wear_app/domain/entities/wear/wear_task.dart';
 import 'package:hotel_wear_app/presentation/screens/wear/wear_task_detail_screen.dart';
 
 class WearDashboardScreen extends ConsumerWidget {
@@ -15,8 +14,9 @@ class WearDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingTasksAsync = ref.watch(wearPendingTasksProvider);
     final inProgressTasksAsync = ref.watch(wearInProgressTasksProvider);
-    final connectionStatus =
-        ref.watch(wearCommunicationServiceProvider).connectionStatus;
+    final connectionStatus = ref
+        .watch(wearCommunicationServiceProvider)
+        .connectionStatus;
 
     // Padding circular para Wear OS Large Round (450x450 dp)
     // Los bordes curvos empiezan aprox a los 38px en cada lado
@@ -77,12 +77,17 @@ class WearDashboardScreen extends ConsumerWidget {
             ),
 
             // Sección: En Progreso
-            SliverToBoxAdapter(
-              child: _SectionLabel(label: 'En progreso', icon: Icons.play_circle_outline),
+            const SliverToBoxAdapter(
+              child: _SectionLabel(
+                label: 'En progreso',
+                icon: Icons.play_circle_outline,
+              ),
             ),
             inProgressTasksAsync.when(
               data: (tasks) => tasks.isEmpty
-                  ? const SliverToBoxAdapter(child: _EmptySlot(text: 'Sin tareas activas'))
+                  ? const SliverToBoxAdapter(
+                      child: _EmptySlot(text: 'Sin tareas activas'),
+                    )
                   : SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (ctx, i) => WearTaskCard(
@@ -111,19 +116,27 @@ class WearDashboardScreen extends ConsumerWidget {
                 ),
               ),
               error: (e, _) => SliverToBoxAdapter(
-                child: Text('Error', style: TextStyle(color: Colors.red[400], fontSize: 11)),
+                child: Text(
+                  'Error',
+                  style: TextStyle(color: Colors.red[400], fontSize: 11),
+                ),
               ),
             ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
             // Sección: Pendientes
-            SliverToBoxAdapter(
-              child: _SectionLabel(label: 'Pendientes', icon: Icons.pending_outlined),
+            const SliverToBoxAdapter(
+              child: _SectionLabel(
+                label: 'Pendientes',
+                icon: Icons.pending_outlined,
+              ),
             ),
             pendingTasksAsync.when(
               data: (tasks) => tasks.isEmpty
-                  ? const SliverToBoxAdapter(child: _EmptySlot(text: 'Sin tareas pendientes'))
+                  ? const SliverToBoxAdapter(
+                      child: _EmptySlot(text: 'Sin tareas pendientes'),
+                    )
                   : SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (ctx, i) => WearTaskCard(
@@ -155,7 +168,10 @@ class WearDashboardScreen extends ConsumerWidget {
                 ),
               ),
               error: (e, _) => SliverToBoxAdapter(
-                child: Text('Error', style: TextStyle(color: Colors.red[400], fontSize: 11)),
+                child: Text(
+                  'Error',
+                  style: TextStyle(color: Colors.red[400], fontSize: 11),
+                ),
               ),
             ),
 

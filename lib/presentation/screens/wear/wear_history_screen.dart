@@ -7,7 +7,7 @@ import 'package:hotel_wear_app/domain/entities/wear/wear_task.dart';
 class WearHistoryScreen extends ConsumerWidget {
   static const String routeName = '/wear-history';
 
-  const WearHistoryScreen({Key? key}) : super(key: key);
+  const WearHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,12 +21,15 @@ class WearHistoryScreen extends ConsumerWidget {
         minimum: circularPadding,
         child: tasksAsync.when(
           data: (tasks) {
-            final history = tasks
-                .where((t) =>
-                    t.status == WearTaskStatus.completed ||
-                    t.status == WearTaskStatus.cancelled)
-                .toList()
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            final history =
+                tasks
+                    .where(
+                      (t) =>
+                          t.status == WearTaskStatus.completed ||
+                          t.status == WearTaskStatus.cancelled,
+                    )
+                    .toList()
+                  ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
             if (history.isEmpty) {
               return const Center(
@@ -70,7 +73,11 @@ class WearHistoryScreen extends ConsumerWidget {
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Row(
                       children: [
-                        const Icon(Icons.history, size: 13, color: Colors.white70),
+                        const Icon(
+                          Icons.history,
+                          size: 13,
+                          color: Colors.white70,
+                        ),
                         const SizedBox(width: 4),
                         const Text(
                           'Historial',
@@ -84,7 +91,9 @@ class WearHistoryScreen extends ConsumerWidget {
                         Text(
                           '${history.length} tareas',
                           style: const TextStyle(
-                              color: Colors.white38, fontSize: 10),
+                            color: Colors.white38,
+                            fontSize: 10,
+                          ),
                         ),
                       ],
                     ),
@@ -125,8 +134,10 @@ class WearHistoryScreen extends ConsumerWidget {
             ),
           ),
           error: (e, _) => Center(
-            child: Text('Error',
-                style: TextStyle(color: Colors.red[400], fontSize: 11)),
+            child: Text(
+              'Error',
+              style: TextStyle(color: Colors.red[400], fontSize: 11),
+            ),
           ),
         ),
       ),

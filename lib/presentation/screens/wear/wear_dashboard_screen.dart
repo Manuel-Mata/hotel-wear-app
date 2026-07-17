@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hotel_wear_app/presentation/providers/wear/wear_providers.dart';
 import 'package:hotel_wear_app/presentation/widgets/wear/wear_task_card.dart';
 import 'package:hotel_wear_app/domain/entities/wear/wear_task.dart';
+import 'package:hotel_wear_app/presentation/screens/wear/wear_task_detail_screen.dart';
 
 class WearDashboardScreen extends ConsumerWidget {
   static const String routeName = '/wear-dashboard';
@@ -76,7 +77,12 @@ class WearDashboardScreen extends ConsumerWidget {
                       .map((task) => WearTaskCard(
                             task: task,
                             onTap: () {
-                              // TODO: Navegar a detalle
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => WearTaskDetailScreen(taskId: task.id),
+                                ),
+                              );
                             },
                           ))
                       .toList(),
@@ -113,10 +119,14 @@ class WearDashboardScreen extends ConsumerWidget {
                       .map((task) => WearTaskCard(
                             task: task,
                             onTap: () {
-                              // TODO: Navegar a detalle
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => WearTaskDetailScreen(taskId: task.id),
+                                ),
+                              );
                             },
                             onAccept: () {
-                              // TODO: Aceptar tarea
                               ref.read(acceptWearTaskProvider(task.id));
                             },
                           ))
